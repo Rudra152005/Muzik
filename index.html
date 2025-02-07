@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musical Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'serif': ['Playfair Display', 'serif'],
+                        'body': ['Lora', 'serif'],
+                    },
+                    colors: {
+                        'vintage-cream': '#F2E8CF',
+                        'vintage-rose': '#E9B7B7',
+                        'vintage-green': '#8DAA91',
+                        'vintage-brown': '#6E4C41',
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Background Image */
+        body {
+            background: url('https://storage.googleapis.com/stateless-blog-g4m-co-uk/2023/03/Featured-image-Instruments-of-the-Orchestra.jpg') no-repeat center center/cover;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Dark overlay to improve readability */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: -1;
+        }
+
+        /* Animated Background */
+        .animated-bg section {
+            top: calc(50vh - 37.5vmin);
+            left: calc(50vw - 37.5vmin);
+            height: 75vmin;
+            width: 75vmin;
+            position: absolute;
+            mix-blend-mode: exclusion;
+        }
+        .animated-bg section:nth-child(2) { transform: rotateZ(22.5deg); }
+        .animated-bg section:nth-child(3) { transform: rotateZ(45deg); }
+        .animated-bg section:nth-child(4) { transform: rotateZ(67.5deg); }
+        .animated-bg section:nth-child(5) { transform: rotateZ(90deg); }
+        .animated-bg section:nth-child(6) { transform: rotateZ(112.5deg); }
+        .animated-bg section:nth-child(7) { transform: rotateZ(135deg); }
+        .animated-bg section:nth-child(8) { transform: rotateZ(157.5deg); }
+
+        .animated-bg section::after {
+            content: '';
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            border-radius: 100%;
+            background-color: #fff;
+            animation: rotation 10s infinite ease-in-out;
+        }
+
+        @keyframes rotation {
+            0%, 100% { transform: rotateX(0deg) rotateY(0deg); }
+            50% { transform: rotateX(180deg) rotateY(270deg); }
+        }
+
+        /* Quiz Container */
+        .quiz-container {
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        /* Progress Bar Animation */
+        @keyframes progressAnimation {
+            0% { width: 100%; }
+            100% { width: 0%; }
+        }
+
+        .progress-bar {
+            height: 4px;
+            background-color: #8DAA91;
+            animation: progressAnimation 30s linear;
+        }
+    </style>
+
+</head>
+<body>
+
+    <!-- Animated Background -->
+    <div class="animated-bg">
+        <section></section>
+        <section></section>
+        <section></section>
+        <section></section>
+        <section></section>
+        <section></section>
+        <section></section>
+        <section></section>
+    </div>
+
+    <!-- Quiz UI -->
+    <div class="quiz-container flex justify-center items-center min-h-screen p-4 w-full max-w-2xl mx-auto">
+        <div class="w-full p-8 bg-white rounded-lg shadow-2xl text-center relative overflow-hidden">
+            
+            <!-- Decorative Elements -->
+            <div class="absolute top-0 left-0 w-24 h-24 bg-vintage-rose opacity-50 rounded-br-full"></div>
+            <div class="absolute top-0 right-0 w-24 h-24 bg-vintage-green opacity-50 rounded-bl-full"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 bg-vintage-green opacity-50 rounded-tr-full"></div>
+            <div class="absolute bottom-0 right-0 w-24 h-24 bg-vintage-rose opacity-50 rounded-tl-full"></div>
+
+            <h1 class="text-4xl font-serif font-bold mb-6 text-vintage-brown relative z-10">Musical Quiz</h1>
+
+            <!-- Timer -->
+            <div class="text-xl mb-2 font-body relative z-10">Time Remaining: <span id="timer" class="font-bold">30</span>s</div>
+            <div class="progress-bar w-full mb-6"></div>
+
+            <!-- Question -->
+            <div id="question" class="text-2xl mb-6 font-body relative z-10">What's the name of this song?</div>
+
+            <!-- Media Player -->
+            <div class="mb-8 relative z-10">
+                <audio id="audioPlayer" class="w-full mt-4" controls>
+                    <source src="" id="audioSource" type="audio/mpeg">
+                    Your browser does not support the audio tag.
+                </audio>
+            </div>
+
+            <!-- Answer Options -->
+            <div class="grid grid-cols-2 gap-6 mb-8 relative z-10" id="options"></div>
+
+            <!-- Result Message -->
+            <p id="result" class="mt-6 text-xl font-bold hidden font-body relative z-10"></p>
+
+            <!-- Next Question Button -->
+            <button id="nextQuestion" class="mt-6 p-4 bg-vintage-brown text-white rounded-lg hover:bg-vintage-green transition duration-300 ease-in-out font-body text-lg hidden">Next Question</button>
+
+            <!-- Score Display -->
+            <div id="score" class="mt-6 text-xl font-body relative z-10">Score: <span id="scoreValue">0</span></div>
+        </div>
+    </div>
+
+    <script>
+        // Quiz Data
+        const quizData = [
+            {
+                question: "What's the name of this song?",
+                audioSrc: "https://example.com/song1.mp3",
+                options: ["Bohemian Rhapsody", "Stairway to Heaven", "Hotel California", "Imagine"],
+                correctAnswer: "Bohemian Rhapsody"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+
+        const questionElement = document.getElementById('question');
+        const optionsElement = document.getElementById('options');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioSource = document.getElementById('audioSource');
+
+        function loadQuestion() {
+            const currentQuizData = quizData[currentQuestion];
+            questionElement.textContent = currentQuizData.question;
+            audioSource.src = currentQuizData.audioSrc;
+            audioPlayer.load();
+
+            optionsElement.innerHTML = '';
+            currentQuizData.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.className = 'p-4 bg-vintage-rose text-white rounded-lg hover:bg-vintage-brown transition duration-300 ease-in-out font-body text-lg';
+                optionsElement.appendChild(button);
+            });
+        }
+
+        // Start the quiz
+        loadQuestion();
+    </script>
+
+</body>
+</html>
